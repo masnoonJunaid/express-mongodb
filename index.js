@@ -1,5 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
+const dboper = require('./operations');
 
 const url = 'mongodb://localhost:27017/';
 const dbname = 'testServer';
@@ -9,38 +10,26 @@ MongoClient.connect(url,(err,client) => {
 	console.log('Connected correctly to server');
 
 	const db = client.db(dbname);
-	const collection = db.collection('dishes');
-	
-	collection.insertOne({"name": "Uthappizza", "description":"test"}, (err,result) => {
-	//check to make sure error is not null
-		assert.equal(err, null); 
 
-		console.log('After Insert:\n');
-		//to check how many operations took
-		console.log(result.ops);
+	dboper.insertDocument(db, { name : "Vadonut",description: 'Test'}, 'dishes', (result)  => {
 
-		//Try to search all the collection in the record
-		collection.find({}).toArray((err,docs) => {
-			assert.equal(err, null);
- //To make sure the document that  we are inserted  in the previous operation is indeed in the  collection so we
-                        //will print that out here
+		console.log('Insert Doument:\n', result.ops);
 
+		dboper.findDocuments(db, 'dishes', (docs) => {
+			console.log('Found Documents:\n', docs);
 
-			console.log('Found:\n');
-			
+				dboper.updateDocument(db, {name: 'Vadonut'} , { description: 'Updated Test'}, 'dishes',(result) => {
+					console.log('Updated Document:\n', result.result);
 
-			//Will return all of the collection according to whatever criteria you provided
-			console.log(docs);
-			
+					dboper.findDocuments(db, 'dishes', (docs) => {
+						console.log('Found Documents:\n', docs );
+						db.dropCollection('dishes', (result) => {
+							console.log('Dropped Collection: ', result);
 
-//dropCollection method to drop the specific collection dishes
-
-			db.dropCollection('dishes', (err,result) => {
-//returns an error or an rusult
-				assert.equal(err,null);
-				client.close();
+							client.close();
+						});
+					});
+				});
 			});
-
 		});
 	});
-})
